@@ -25,8 +25,9 @@ To install from a source package:
 
     $ pip install whip_neustar   # or "whip_neustar_$VERSION.tar.gz"
 
+
 Dependencies
 ============
 
 * `aaargh` for the command line interface
-* `ujson` for JSON encoding (for performance reasons)
+* `ujson` for JSON encoding (optional, only for performance reasons)

@@ -6,7 +6,16 @@ import logging
 import sys
 
 import aaargh
-import ujson
+
+JSON_LIBS = ('ujson', 'simplejson', 'json')
+
+for lib in JSON_LIBS:
+    try:
+        json = __import__(lib)
+    except ImportError:
+        pass
+    else:
+        break
 
 from .reader import iter_records
 
@@ -20,7 +29,7 @@ def convert(filename):
     out_fp = sys.stdout
 
     write = out_fp.write
-    dumps = ujson.dumps
+    dumps = json.dumps
     for doc in iter_records(filename):
         write(dumps(doc))
         write('\n')
