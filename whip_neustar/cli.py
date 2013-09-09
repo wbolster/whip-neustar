@@ -14,7 +14,7 @@ app = aaargh.App(
     description="Neustar (formerly Quova) data set utilities.")
 
 
-@app.cmd(description="foobar")
+@app.cmd(description="Convert a Neustar V7 dataset to Whip format")
 @app.cmd_arg('filename')
 def convert(filename):
     out_fp = sys.stdout
