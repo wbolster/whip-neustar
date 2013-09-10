@@ -6,7 +6,7 @@ setup(
     packages=['whip_neustar'],
     entry_points={
         'console_scripts': [
-            'whip-neustar = whip_neustar.cli:main',
+            'whip-neustar-cli = whip_neustar.cli:main',
         ],
     }
 )
