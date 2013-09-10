@@ -88,66 +88,44 @@ def format_ipv4_address(s, _inet_ntoa=socket.inet_ntoa,
     return _inet_ntoa(_pack(int(s)))
 
 
-def iter_records(data_file):
-    logger.info("Using data file %r", data_file)
-
-    match = DATA_FILE_RE.match(os.path.basename(data_file))
-    if not match:
-        raise RuntimeError(
-            "Unrecognized data file name: %r (is it the correct file?)"
-            % data_file)
-
-    match_dict = match.groupdict()
-    version = match_dict['version']
-    dt = datetime.datetime(int(match_dict['year']),
-                           int(match_dict['month']),
-                           int(match_dict['day']))
+def iter_records(fp, dt):
     dt_as_str = dt.strftime(ISO8601_DATETIME_FMT)
+    reader = csv.reader(fp)
+    it = iter(reader)
 
-    logger.info(
-        "Detected date %s and version %s for data file %r",
-        dt_as_str, version, data_file)
+    # Skip header line, but make sure it is actually a header line
+    header_line = next(it)
+    if header_line[0] != FIELDS[0]:
+        raise ValueError(
+            "First line of input does not seem a header line: %r"
+            % header_line)
 
-    # Prepare for reading the CSV data
-    with open(data_file, 'rb') as fp:
-        reader = csv.reader(fp)
-        it = iter(reader)
+    for record in it:
 
-        # Skip header line, but make sure it is actually a header line
-        header_line = next(it)
-        if header_line[0] != FIELDS[0]:
-            raise ValueError(
-                "First line of input file %r does not seem a header line"
-                % data_file)
+        out = dict(itertools.izip(FIELDS, map(clean_field, record)))
 
-        for n, record in enumerate(it, 1):
+        # Data file information
+        out['datetime'] = dt_as_str
 
-            out = dict(itertools.izip(FIELDS, map(clean_field, record)))
+        # Drop unwanted fields
+        for k in IGNORED_FIELDS:
+            del out[k]
 
-            # Data file information
-            out['datetime'] = dt_as_str
+        # Network information
+        out['begin'] = format_ipv4_address(out.pop('start_ip_int'))
+        out['end'] = format_ipv4_address(out.pop('end_ip_int'))
 
-            # Drop unwanted fields
-            for k in IGNORED_FIELDS:
-                del out[k]
+        # Convert numeric fields (if not None)
+        for key in INTEGER_FIELDS:
+            if out[key] is not None:
+                out[key] = int(out[key])
+        for key in FLOAT_FIELDS:
+            if out[key] is not None:
+                out[key] = float(out[key])
 
-            # Network information
-            out['begin'] = format_ipv4_address(out.pop('start_ip_int'))
-            out['end'] = format_ipv4_address(out.pop('end_ip_int'))
+        # Convert time zone string like '-3.5' into ±HH:MM format
+        if out['time_zone'] is not None:
+            tz_frac, tz_int = math.modf(float(out['time_zone']))
+            out['time_zone'] = '%+03d:%02d' % (tz_int, abs(60 * tz_frac))
 
-            # Convert numeric fields (if not None)
-            for key in INTEGER_FIELDS:
-                if out[key] is not None:
-                    out[key] = int(out[key])
-            for key in FLOAT_FIELDS:
-                if out[key] is not None:
-                    out[key] = float(out[key])
-
-            # Convert time zone string like '-3.5' into ±HH:MM format
-            if out['time_zone'] is not None:
-                tz_frac, tz_int = math.modf(float(out['time_zone']))
-                out['time_zone'] = '%+03d:%02d' % (tz_int, abs(60 * tz_frac))
-
-            yield out
-
-    logger.info("Finished reading %r (%d records)", data_file, n)
+        yield out

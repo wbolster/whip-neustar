@@ -2,9 +2,11 @@
 Command line interface module.
 """
 
+import datetime
 import gzip
 import logging
 import os
+import re
 import sys
 
 import aaargh
@@ -37,15 +39,38 @@ app = aaargh.App(
 
 
 @app.cmd(description="Convert a Neustar V7 dataset to Whip format")
-@app.cmd_arg('filename')
-def convert(filename):
-    out_fp = sys.stdout
+@app.cmd_arg('input', type=file, nargs='?', default=sys.stdin)
+@app.cmd_arg('--datetime', dest='datetime_arg')
+@app.cmd_arg('--output', '-o', default=sys.stdout)
+def convert(input, datetime_arg, output):
+    if datetime_arg is None:
+        logger.info("No date specified; trying to extract from "
+                    "file name")
+        match = re.search(
+            r'(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})\.csv',
+            os.path.basename(input.name))
+        if match is None:
+            raise RuntimeError("Could not extract datetime from file name")
+        match_dict = match.groupdict()
+        year = int(match_dict['year'])
+        month = int(match_dict['month'])
+        day = int(match_dict['day'])
+    else:
+        year, month, day = map(int, datetime_arg.split('-', maxsplit=2))
 
-    write = out_fp.write
-    dumps = json.dumps
-    for doc in reader.iter_records(filename):
-        write(dumps(doc))
+    fp = gzip_wrap(input)
+    dt = datetime.datetime(year, month, day)
+    logger.info("Converting input file %r using date %s", fp.name, dt)
+
+    it = reader.iter_records(fp, dt)
+    write = output.write
+    dump = json.dump
+    n = 0
+    for n, doc in enumerate(it, 1):
+        dump(doc, output)
         write('\n')
+
+    logger.info("Converted %d records", n)
 
 
 @app.cmd(
