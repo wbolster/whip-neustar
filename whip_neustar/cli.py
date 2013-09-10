@@ -2,10 +2,13 @@
 Command line interface module.
 """
 
+import gzip
 import logging
 import sys
 
 import aaargh
+
+logger = logging.getLogger(__name__)
 
 JSON_LIBS = ('ujson', 'simplejson', 'json')
 
@@ -17,7 +20,16 @@ for lib in JSON_LIBS:
     else:
         break
 
-from .reader import iter_records
+from . import reader
+from . import v7conversion
+
+
+def gzip_wrap(fp):
+    if fp.name.endswith('.gz'):
+        return gzip.GzipFile(mode='r', fileobj=fp)
+    else:
+        return fp
+
 
 app = aaargh.App(
     description="Neustar (formerly Quova) data set utilities.")
@@ -30,9 +42,32 @@ def convert(filename):
 
     write = out_fp.write
     dumps = json.dumps
-    for doc in iter_records(filename):
+    for doc in reader.iter_records(filename):
         write(dumps(doc))
         write('\n')
+
+
+@app.cmd(
+    name='convert-to-v7',
+    description="Convert an older Quova data set into V7 format")
+@app.cmd_arg('data_fp', type=file)
+@app.cmd_arg('ref_fp', type=file, nargs='?')
+@app.cmd_arg('--output', '-o', default=sys.stdout)
+def convert_v7(data_fp, ref_fp, output):
+    if ref_fp is None:
+        logger.info("No reference file specified; trying to find it "
+                    "based on data file name")
+        ref_fp = open(data_fp.name.replace('.dat', '.ref'))
+
+    ref_fp = gzip_wrap(ref_fp)
+    logger.info("Loading reference file %r into memory", ref_fp.name)
+    references = v7conversion.load_references(ref_fp)
+
+    logger.info("Converting input file %r", data_fp.name)
+    data_fp = gzip_wrap(data_fp)
+
+    n = v7conversion.convert_to_v7(data_fp, references, output)
+    logger.info("Converted %d records", n)
 
 
 def main():
