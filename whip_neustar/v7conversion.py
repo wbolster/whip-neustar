@@ -91,7 +91,7 @@ def load_references(fp):
 
         ref_type, n_records, max_id = row
         for ref_id, value in itertools.islice(ref_reader, int(n_records)):
-            references[ref_type][int(ref_id)] = clean_field_old_format(value)
+            references[ref_type][ref_id] = clean_field_old_format(value)
 
     return references
 
@@ -129,10 +129,10 @@ def convert_to_v7(fp, references, out_fp):
             record[k2] = record.pop(k1)
 
         # Reference lookups
-        record['carrier'] = references['carrier'][int(record['carrier_id'])]
-        record['organization'] = references['org'][int(record['reg_org_id'])]
-        record['sld'] = references['sld'][int(record['sld_id'])]
-        record['tld'] = references['tld'][int(record['tld_id'])]
+        record['carrier'] = references['carrier'][record['carrier_id']]
+        record['organization'] = references['org'][record['reg_org_id']]
+        record['sld'] = references['sld'][record['sld_id']]
+        record['tld'] = references['tld'][record['tld_id']]
 
         # Drop magic "empty" value for time zones
         if record['time_zone'] == '999':
