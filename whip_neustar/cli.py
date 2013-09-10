@@ -38,12 +38,14 @@ app = aaargh.App(
     description="Neustar (formerly Quova) data set utilities.")
 
 
-@app.cmd(description="Convert a Neustar V7 dataset to Whip format")
-@app.cmd_arg('input', type=file, nargs='?', default=sys.stdin)
-@app.cmd_arg('--datetime', dest='datetime_arg')
-@app.cmd_arg('--output', '-o', default=sys.stdout)
-def convert(input, datetime_arg, output):
-    if datetime_arg is None:
+@app.cmd(help="Convert a Neustar V7 dataset to Whip format")
+@app.cmd_arg('input', type=file, nargs='?', default=sys.stdin,
+             help="Input data file (defaults to stdin)")
+@app.cmd_arg('--date', help="Date to use (YYYY-MM-DD)")
+@app.cmd_arg('--output', '-o', default=sys.stdout,
+             help="Output file (defaults to stdout)")
+def convert(input, date, output):
+    if date is None:
         logger.info("No date specified; trying to extract from "
                     "file name")
         match = re.search(
@@ -56,7 +58,7 @@ def convert(input, datetime_arg, output):
         month = int(match_dict['month'])
         day = int(match_dict['day'])
     else:
-        year, month, day = map(int, datetime_arg.split('-', maxsplit=2))
+        year, month, day = map(int, date.split('-', maxsplit=2))
 
     fp = gzip_wrap(input)
     dt = datetime.datetime(year, month, day)
@@ -75,10 +77,14 @@ def convert(input, datetime_arg, output):
 
 @app.cmd(
     name='convert-to-v7',
-    description="Convert an older Quova data set into V7 format")
-@app.cmd_arg('data_fp', type=file, nargs='?', default=sys.stdin)
-@app.cmd_arg('ref_fp', type=file, nargs='?')
-@app.cmd_arg('--output', '-o', default=sys.stdout)
+    help="Convert an older Quova data set into V7 format")
+@app.cmd_arg('data_fp', metavar="data-file", type=file, nargs='?',
+             help="Input data file")
+@app.cmd_arg('ref_fp', metavar='references-file', type=file, nargs='?',
+             help="Reference file name (optional, defauls to "
+                  ".ref file next to data file)")
+@app.cmd_arg('--output', '-o', default=sys.stdout,
+             help="Output file (defaults to stdout)")
 def convert_v7(data_fp, ref_fp, output):
     if ref_fp is None:
         logger.info("No reference file specified; trying to find it "
