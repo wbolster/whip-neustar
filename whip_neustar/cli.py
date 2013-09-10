@@ -4,11 +4,12 @@ Command line interface module.
 
 import gzip
 import logging
+import os
 import sys
 
 import aaargh
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(os.path.basename(sys.argv[0]))
 
 JSON_LIBS = ('ujson', 'simplejson', 'json')
 
