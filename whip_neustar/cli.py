@@ -50,13 +50,15 @@ def convert(filename):
 @app.cmd(
     name='convert-to-v7',
     description="Convert an older Quova data set into V7 format")
-@app.cmd_arg('data_fp', type=file)
+@app.cmd_arg('data_fp', type=file, nargs='?', default=sys.stdin)
 @app.cmd_arg('ref_fp', type=file, nargs='?')
 @app.cmd_arg('--output', '-o', default=sys.stdout)
 def convert_v7(data_fp, ref_fp, output):
     if ref_fp is None:
         logger.info("No reference file specified; trying to find it "
                     "based on data file name")
+        if not '.dat' in data_fp.name:
+            raise RuntimeError("Cannot deduce reference file name")
         ref_fp = open(data_fp.name.replace('.dat', '.ref'))
 
     ref_fp = gzip_wrap(ref_fp)
