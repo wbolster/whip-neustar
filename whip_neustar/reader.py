@@ -5,11 +5,9 @@ Neustar (Quova) data set reader module.
 """
 
 import csv
-import datetime
 import itertools
 import logging
 import math
-import os
 import re
 import socket
 import struct
