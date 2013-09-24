@@ -19,15 +19,13 @@ Installation
 
 To install the package from a source tree::
 
+    $ pip install -r requirements.txt
     $ pip install -e .
-
-To install from a source package:
-
-    $ pip install whip_neustar   # or "whip_neustar_$VERSION.tar.gz"
 
 
 Dependencies
 ============
 
-* `aaargh` for the command line interface
-* `ujson` for JSON encoding (optional, only for performance reasons)
+* *Python* 3.3+ (no Python 2 support!)
+* *Aaargh* for the command line tool
+* *UltraJSON (*ujson*) for fast JSON encoding and decoding (optional)

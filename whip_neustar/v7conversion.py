@@ -116,7 +116,7 @@ def convert_to_v7(fp, references, out_fp):
     # Loop and transform
     n = 0
     for n, record in enumerate(csv_reader, 1):
-        for k, v in record.iteritems():
+        for k, v in record.items():
             record[k] = clean_field_old_format(v)
 
         # Replace missing numerical values by empty strings
@@ -125,7 +125,7 @@ def convert_to_v7(fp, references, out_fp):
                 record[key] = ''
 
         # Rename some fields
-        for k1, k2 in OLD_FORMAT_RENAMED_FIELDS.iteritems():
+        for k1, k2 in OLD_FORMAT_RENAMED_FIELDS.items():
             record[k2] = record.pop(k1)
 
         # Reference lookups

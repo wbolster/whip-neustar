@@ -5,7 +5,6 @@ Neustar (Quova) data set reader module.
 """
 
 import csv
-import itertools
 import logging
 import math
 import re
@@ -100,7 +99,7 @@ def iter_records(fp, dt):
 
     for record in it:
 
-        out = dict(itertools.izip(FIELDS, map(clean_field, record)))
+        out = dict(zip(FIELDS, map(clean_field, record)))
 
         # Data file information
         out['datetime'] = dt_as_str

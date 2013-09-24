@@ -2,8 +2,10 @@
 Command line interface module.
 """
 
+import argparse
 import datetime
 import gzip
+import io
 import logging
 import os
 import re
@@ -13,15 +15,12 @@ import aaargh
 
 logger = logging.getLogger(os.path.basename(sys.argv[0]))
 
-JSON_LIBS = ('ujson', 'simplejson', 'json')
-
-for lib in JSON_LIBS:
+for lib in ('ujson', 'simplejson', 'json'):
     try:
         json = __import__(lib)
+        break
     except ImportError:
         pass
-    else:
-        break
 
 from . import reader
 from . import v7conversion
@@ -29,21 +28,30 @@ from . import v7conversion
 
 def gzip_wrap(fp):
     if fp.name.endswith('.gz'):
-        return gzip.GzipFile(mode='r', fileobj=fp)
+        return gzip.open(fp, mode='rt', encoding='ascii')
     else:
-        return fp
+        return io.TextIOWrapper(fp, encoding='ascii')
 
 
 app = aaargh.App(
     description="Neustar (formerly Quova) data set utilities.")
 
 
-@app.cmd(help="Convert a Neustar V7 dataset to Whip format")
-@app.cmd_arg('input', type=file, nargs='?', default=sys.stdin,
-             help="Input data file (defaults to stdin)")
-@app.cmd_arg('--date', help="Date to use (YYYY-MM-DD)")
-@app.cmd_arg('--output', '-o', default=sys.stdout,
-             help="Output file (defaults to stdout)")
+@app.cmd(
+    help="Convert a Neustar V7 dataset to Whip format")
+@app.cmd_arg(
+    'input',
+    type=argparse.FileType('rb'),
+    nargs='?',
+    default=sys.stdin,
+    help="Input data file (defaults to stdin)")
+@app.cmd_arg(
+    '--date',
+    help="Date to use (YYYY-MM-DD)")
+@app.cmd_arg(
+    '--output', '-o',
+    default=sys.stdout,
+    help="Output file (defaults to stdout)")
 def convert(input, date, output):
     if date is None:
         logger.info("No date specified; trying to extract from "
@@ -78,11 +86,18 @@ def convert(input, date, output):
 @app.cmd(
     name='convert-to-v7',
     help="Convert an older Quova data set into V7 format")
-@app.cmd_arg('data_fp', metavar="data-file", type=file, nargs='?',
-             help="Input data file")
-@app.cmd_arg('ref_fp', metavar='references-file', type=file, nargs='?',
-             help="Reference file name (optional, defauls to "
-                  ".ref file next to data file)")
+@app.cmd_arg(
+    'data_fp',
+    metavar="data-file",
+    type=argparse.FileType('rb'),
+    help="Input data file")
+@app.cmd_arg(
+    'ref_fp',
+    metavar='references-file',
+    type=argparse.FileType('rb'),
+    nargs='?',
+    help="Reference file name (optional, defauls to .ref file next to "
+         "data file)")
 @app.cmd_arg('--output', '-o', default=sys.stdout,
              help="Output file (defaults to stdout)")
 def convert_v7(data_fp, ref_fp, output):
@@ -91,7 +106,7 @@ def convert_v7(data_fp, ref_fp, output):
                     "based on data file name")
         if not '.dat' in data_fp.name:
             raise RuntimeError("Cannot deduce reference file name")
-        ref_fp = open(data_fp.name.replace('.dat', '.ref'))
+        ref_fp = open(data_fp.name.replace('.dat', '.ref'), mode='rb')
 
     ref_fp = gzip_wrap(ref_fp)
     logger.info("Loading reference file %r into memory", ref_fp.name)
