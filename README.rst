@@ -28,4 +28,4 @@ Dependencies
 
 * *Python* 3.3+ (no Python 2 support!)
 * *Aaargh* for the command line tool
-* *UltraJSON (*ujson*) for fast JSON encoding and decoding (optional)
+* *UltraJSON* (*ujson*) for fast JSON encoding and decoding (optional)
